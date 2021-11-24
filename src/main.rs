@@ -1,14 +1,7 @@
 mod day01;
 use std::fmt;
-
-fn usage_exit(e: Option<&'static str> ) -> ! {
-    if let Some(s) = e {
-        println!("{}",s);
-    }
-    println!("USAGE:");
-    println!("    AoC-2021 [-d] [day]");
-    std::process::exit(1)
-}
+use std::fs::File;
+use std::io::BufReader;
 
 pub struct Solution {
     part_a: i64,
@@ -32,15 +25,6 @@ pub struct AppArgs {
     day: usize
 }
 
-impl fmt::Display for AppArgs {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "AppArgs:\n")?;
-        write!(f, "  Day: {}\n", self.day)?;
-        write!(f, "  Data file path: {}\n", self.data_file_path)?;
-        write!(f, "  Debug mode: {}\n", self.debug_mode)
-    }    
-}
-
 impl AppArgs{
     fn parse<T>( args: T) -> Result<AppArgs, &'static str> 
       where T: Iterator<Item=String> {
@@ -61,7 +45,8 @@ impl AppArgs{
                 data_file_path = match args.next() {
                     Some(f) => Some(f),
                     _ => return Err("Missing file path argument for -f/--file")
-                }
+                };
+                continue;
             }
 
             // This had better be the last argument
@@ -87,6 +72,28 @@ impl AppArgs{
     }
 }
 
+impl fmt::Display for AppArgs {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "AppArgs:\n")?;
+        write!(f, "  Day: {}\n", self.day)?;
+        write!(f, "  Data file path: {}\n", self.data_file_path)?;
+        write!(f, "  Debug mode: {}\n", self.debug_mode)
+    }    
+}
+
+pub fn open_problem_file(filename: &str) -> std::io::Result<BufReader<File>>{
+    let f = File::open(filename)?;
+    Ok(std::io::BufReader::new(f))
+}
+
+fn usage_exit(e: Option<&'static str> ) -> ! {
+    if let Some(s) = e {
+        println!("{}",s);
+    }
+    println!("USAGE:");
+    println!("    AoC-2021 [-d] [-f path] day");
+    std::process::exit(1)
+}
 
 fn main() {
 
@@ -94,14 +101,17 @@ fn main() {
 
     println!("Arguments:\n {}",args);
 
-    let solution = match args.day {
-        1 => day01::solve(&args),
+    type Solver = fn(&AppArgs) -> Option<Solution>;
+    let solver: Solver = match args.day {
+        1 => day01::solve,
         _ => {
             println!("No solver available for day {}", args.day);
             std::process::exit(1);
         }
     };
 
-
-    println!("{}", solution);
+    match solver(&args) {
+        Some(solution) => println!("{}", solution),
+        None => println!("Solution not found")
+    }
 }
