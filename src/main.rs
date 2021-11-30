@@ -1,12 +1,15 @@
 mod day01;
 use std::fmt;
-use std::fs::File;
-use std::io::BufReader;
+use std::fs::{File};
+use std::io::{BufReader};
+use anyhow::{anyhow,Result};
 
 pub struct Solution {
     part_a: i64,
     part_b: Option<i64>
 }
+
+
 
 impl fmt::Display for Solution {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -26,7 +29,7 @@ pub struct AppArgs {
 }
 
 impl AppArgs{
-    fn parse<T>( args: T) -> Result<AppArgs, &'static str> 
+    fn parse<T>( args: T) -> Result<AppArgs> 
       where T: Iterator<Item=String> {
         let mut day = None;
         let mut debug_mode = false;
@@ -37,33 +40,38 @@ impl AppArgs{
         args.next();
 
         while let Some(arg) = args.next() {
-            if arg == "-d" || arg == "--debug" {
-                debug_mode = true;
-                continue;
-            }
-            if arg == "-f" || arg == "--file" {
-                data_file_path = match args.next() {
-                    Some(f) => Some(f),
-                    _ => return Err("Missing file path argument for -f/--file")
-                };
-                continue;
+            if arg.starts_with('-') {
+                if arg == "-d" || arg == "--debug" {
+                    debug_mode = true;
+                    continue;
+                }
+                if arg == "-f" || arg == "--file" {
+                    data_file_path = match args.next() {
+                        Some(f) => Some(f),
+                        _ => return Err(anyhow!("Missing file path argument for -f/--file"))
+                    };
+                    continue;
+                }
+                return Err(anyhow!("Unknown argument {}",arg))
             }
 
             // This had better be the last argument
-            if let Some(_) = args.next() {
-                return Err("Unknown extra arguments");
+            if let Some(arg2) = args.next() {
+                return Err(anyhow!("Unknown extra argument {}", arg2));
             }
 
             day = match arg.parse::<usize>() {
                 Ok(d) => Some(d),
-                _ => return Err("Unable to parse day argument")
+                _ => return Err(anyhow!("Unable to parse day argument: {}", arg))
             }
+
         }
 
-        let day = match day {
+       let day = match day {
             Some(d) => d,
-            _ => return Err("Missing day argument")
+            _ => return Err(anyhow!("Missing day argument"))
         };
+
 
         let debug_suffix = if debug_mode { "-d"} else { "" };
         let data_file_path = data_file_path.unwrap_or_else( || format!("data/day{}{}.txt",day,debug_suffix) );
@@ -81,37 +89,32 @@ impl fmt::Display for AppArgs {
     }    
 }
 
-pub fn open_problem_file(filename: &str) -> std::io::Result<BufReader<File>>{
+pub fn open_problem_file(filename: &str) -> Result<BufReader<File>>{
     let f = File::open(filename)?;
-    Ok(std::io::BufReader::new(f))
+    Ok(BufReader::new(f))
 }
 
-fn usage_exit(e: Option<&'static str> ) -> ! {
-    if let Some(s) = e {
-        println!("{}",s);
-    }
-    println!("USAGE:");
-    println!("    AoC-2021 [-d] [-f path] day");
-    std::process::exit(1)
+fn usage() {
+    let app_name:String = std::env::args().next().unwrap_or_else( || String::from(""));
+
+    println!("usage:");
+    println!("    {} [-d,--debug] [-f/--file PATH] DAY", app_name);
 }
 
-fn main() {
+fn main() -> Result<()> {
 
-    let args = AppArgs::parse( std::env::args() ).unwrap_or_else( |e| usage_exit(Some(e)) );
+    let args = AppArgs::parse( std::env::args() ).map_err( |e| {usage(); e} )?;
 
-    println!("Arguments:\n {}",args);
-
-    type Solver = fn(&AppArgs) -> Option<Solution>;
+    type Solver = fn(&AppArgs) -> Result<Solution>;
     let solver: Solver = match args.day {
         1 => day01::solve,
         _ => {
-            println!("No solver available for day {}", args.day);
-            std::process::exit(1);
+            return Err(anyhow!("No solver available for day {}", args.day))
         }
     };
 
-    match solver(&args) {
-        Some(solution) => println!("{}", solution),
-        None => println!("Solution not found")
-    }
+    let solution = solver(&args)?;
+    println!("{}",solution);
+
+    Ok(())
 }
