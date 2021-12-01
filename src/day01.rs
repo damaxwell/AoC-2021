@@ -38,7 +38,7 @@ pub fn solve(args: &AppArgs) -> Result<Solution> {
 
 	let mut i_count2 = 0;
 
-	for (k, &current) in measurements.iter().enumerate() {
+	for (k, &current) in measurements.iter().skip(3).enumerate() {
 		window[k % 3] = current;
 		let w_sum = sum(&window);
 		if w_sum > prev {
