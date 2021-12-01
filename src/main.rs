@@ -3,7 +3,7 @@ mod day02;
 use std::fmt;
 use std::fs::{File};
 use std::io::{BufReader};
-use anyhow::{anyhow,Result};
+use anyhow::{anyhow,Result,Context};
 
 
 
@@ -30,6 +30,7 @@ impl fmt::Display for Solution {
 
 pub struct AppArgs {
     debug_mode: bool,
+    help_mode: bool,
     data_file_path: String,
     day: usize
 }
@@ -38,9 +39,9 @@ impl AppArgs{
     fn parse<T>( args: T) -> Result<AppArgs> 
       where T: Iterator<Item=String> {
         let mut day = None;
+        let mut help_mode = false;
         let mut debug_mode = false;
         let mut data_file_path = None;
-
         let mut args = args.into_iter();
         // Skip the executable name.
         args.next();
@@ -56,6 +57,10 @@ impl AppArgs{
                         Some(f) => Some(f),
                         _ => return Err(anyhow!("Missing file path argument for -f/--file"))
                     };
+                    continue;
+                }
+                if arg == "-h" || arg == "--help" {
+                    help_mode = true;
                     continue;
                 }
                 return Err(anyhow!("Unknown argument {}",arg))
@@ -82,12 +87,13 @@ impl AppArgs{
         let debug_suffix = if debug_mode { "-d"} else { "" };
         let data_file_path = data_file_path.unwrap_or_else( || format!("data/day{:02}{}.txt",day,debug_suffix) );
 
-        Ok( AppArgs { debug_mode: debug_mode, data_file_path: data_file_path, day: day })
+        Ok( AppArgs { help_mode: help_mode, debug_mode: debug_mode, data_file_path: data_file_path, day: day })
     }
 
 
     pub fn open_problem_file(&self) -> Result<BufReader<File>>{
-        let f = File::open(&self.data_file_path)?;
+        let f = File::open(&self.data_file_path)
+                     .with_context(|| format!("Opening file: {}", &self.data_file_path) )?;
         Ok(BufReader::new(f))
     }
     
@@ -108,12 +114,21 @@ fn usage() {
     let app_name:String = std::env::args().next().unwrap_or_else( || String::from(""));
 
     println!("usage:");
-    println!("    {} [-d,--debug] [-f/--file PATH] DAY", app_name);
+    println!("    {} [-h,--help] [-d,--debug] [-f/--file PATH] DAY", app_name);
+    println!("");
+    println!("Input file is inferred if not given by --file:");
+    println!("  data/dayXX.txt or");
+    println!("  data/dayXX-d.txt in debug mode");
 }
 
 fn main() -> Result<()> {
 
     let args = AppArgs::parse( std::env::args() ).map_err( |e| {usage(); e} )?;
+
+    if args.help_mode {
+        usage();
+        return Ok(());
+    }
 
     let solver = SOLVERS.get(args.day-1)
                         .ok_or_else(|| anyhow!("No solver available for day {}", args.day))?;
