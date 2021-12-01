@@ -5,6 +5,13 @@ use std::fs::{File};
 use std::io::{BufReader};
 use anyhow::{anyhow,Result};
 
+
+
+type Solver = fn(&AppArgs) -> Result<Solution>;
+static SOLVERS: &[Solver] = &[ day01::solve, 
+                               day02::solve ];
+
+
 pub struct Solution {
     part_a: i64,
     part_b: Option<i64>
@@ -108,16 +115,11 @@ fn main() -> Result<()> {
 
     let args = AppArgs::parse( std::env::args() ).map_err( |e| {usage(); e} )?;
 
-    type Solver = fn(&AppArgs) -> Result<Solution>;
-    let solver: Solver = match args.day {
-        1 => day01::solve,
-        2 => day02::solve,
-        _ => {
-            return Err(anyhow!("No solver available for day {}", args.day))
-        }
-    };
+    let solver = SOLVERS.get(args.day-1)
+                        .ok_or_else(|| anyhow!("No solver available for day {}", args.day))?;
 
     let solution = solver(&args)?;
+
     println!("{}",solution);
 
     Ok(())

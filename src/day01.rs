@@ -1,15 +1,8 @@
 use crate::Solution;
 use crate::AppArgs;
-use anyhow::{anyhow,Result};
+use anyhow::Result;
 use std::io::BufRead;
 
-pub fn sum( v: &[i64] ) -> i64 {
-	let mut s: i64 = 0;
-	for val in v {
-		s +=  val;
-	}
-	s
-}
 
 pub fn solve(args: &AppArgs) -> Result<Solution> {
 
@@ -17,38 +10,41 @@ pub fn solve(args: &AppArgs) -> Result<Solution> {
 
 	let mut measurements = Vec::new();
 	for line in r.lines() {
-		let current = line?.parse::<i64>()?;
-		measurements.push(current);
+		measurements.push( line?.parse::<i64>()? );
 	}
 
-	let mut prev = 0;
-	let mut i_count = 0;
+	let mut prev = measurements[0];
+	let mut star1 = 0;
 
-	for (k, &current) in measurements.iter().enumerate() {
-		if k > 0 {
-			if prev < current {
-				i_count += 1;
-			}			
-		}
+	for &current in measurements.iter().skip(1) {
+		if prev < current {
+			star1 += 1;
+		}			
 		prev = current;
 	}
 
 	let mut window = [ measurements[0], measurements[1] , measurements[2] ];
-	let mut prev = sum(&window);
 
-	let mut i_count2 = 0;
+	#[inline]
+	fn sum( v: &[i64;3] ) -> i64 {
+		v[0] + v[1] + v[2]
+	}
 
-	for (k, &current) in measurements.iter().skip(3).enumerate() {
-		window[k % 3] = current;
-		let w_sum = sum(&window);
-		if w_sum > prev {
-			i_count2 += 1;
+	let mut prev_sum = sum(&window);
+
+	let mut star2 = 0;
+
+	for (k, &current_value) in measurements.iter().skip(3).enumerate() {
+		window[k % 3] = current_value;
+		let current_sum = sum(&window);
+		if current_sum > prev_sum {
+			star2 += 1;
 		}
-		prev = w_sum;				
+		prev_sum = current_sum;				
 	}
 
 	return Ok( Solution {
-		part_a: i_count,
-		part_b: Some( i_count2 )
+		part_a: star1,
+		part_b: Some( star2 )
 	} ) 
 }
