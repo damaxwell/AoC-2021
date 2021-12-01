@@ -1,4 +1,5 @@
 mod day01;
+mod day02;
 use std::fmt;
 use std::fs::{File};
 use std::io::{BufReader};
@@ -110,6 +111,7 @@ fn main() -> Result<()> {
     type Solver = fn(&AppArgs) -> Result<Solution>;
     let solver: Solver = match args.day {
         1 => day01::solve,
+        2 => day02::solve,
         _ => {
             return Err(anyhow!("No solver available for day {}", args.day))
         }
