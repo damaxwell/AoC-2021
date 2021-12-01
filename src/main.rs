@@ -9,8 +9,6 @@ pub struct Solution {
     part_b: Option<i64>
 }
 
-
-
 impl fmt::Display for Solution {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Solution:\n")?;
@@ -74,10 +72,18 @@ impl AppArgs{
 
 
         let debug_suffix = if debug_mode { "-d"} else { "" };
-        let data_file_path = data_file_path.unwrap_or_else( || format!("data/day{}{}.txt",day,debug_suffix) );
+        let data_file_path = data_file_path.unwrap_or_else( || format!("data/day{:02}{}.txt",day,debug_suffix) );
 
         Ok( AppArgs { debug_mode: debug_mode, data_file_path: data_file_path, day: day })
     }
+
+
+    pub fn open_problem_file(&self) -> Result<BufReader<File>>{
+        let f = File::open(&self.data_file_path)?;
+        Ok(BufReader::new(f))
+    }
+    
+
 }
 
 impl fmt::Display for AppArgs {
@@ -89,10 +95,6 @@ impl fmt::Display for AppArgs {
     }    
 }
 
-pub fn open_problem_file(filename: &str) -> Result<BufReader<File>>{
-    let f = File::open(filename)?;
-    Ok(BufReader::new(f))
-}
 
 fn usage() {
     let app_name:String = std::env::args().next().unwrap_or_else( || String::from(""));
