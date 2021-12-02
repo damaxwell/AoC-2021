@@ -31,7 +31,7 @@ impl fmt::Display for Solution {
 pub struct AppArgs {
     debug_mode: bool,
     help_mode: bool,
-    data_file_path: String,
+    data_file_path: Option<String>,
     day: usize
 }
 
@@ -84,16 +84,32 @@ impl AppArgs{
         };
 
 
-        let debug_suffix = if debug_mode { "-d"} else { "" };
-        let data_file_path = data_file_path.unwrap_or_else( || format!("data/day{:02}{}.txt",day,debug_suffix) );
 
-        Ok( AppArgs { help_mode: help_mode, debug_mode: debug_mode, data_file_path: data_file_path, day: day })
+        Ok( AppArgs { help_mode: help_mode, 
+                      debug_mode: debug_mode, 
+                      data_file_path: data_file_path, 
+                      day: day })
     }
 
 
     pub fn open_problem_file(&self) -> Result<BufReader<File>>{
-        let f = File::open(&self.data_file_path)
-                     .with_context(|| format!("Opening file: {}", &self.data_file_path) )?;
+
+        let default_path: String;
+        let data_file_path = match self.data_file_path {
+            Some(ref path) => { path }
+            None => {
+                let mut debug_suffix = "";
+                if self.debug_mode {
+                    debug_suffix = "-d";
+                };
+                default_path = format!("data/day{:02}{}.txt",self.day,debug_suffix);
+                &default_path
+            }
+        };
+
+        // let data_file_path = "data/day02.txt";
+        let f = File::open(data_file_path)
+                     .with_context(|| format!("Opening file: {}", data_file_path) )?;
         Ok(BufReader::new(f))
     }
     
@@ -104,7 +120,14 @@ impl fmt::Display for AppArgs {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "AppArgs:\n")?;
         write!(f, "  Day: {}\n", self.day)?;
-        write!(f, "  Data file path: {}\n", self.data_file_path)?;
+        match self.data_file_path {
+            Some(ref p) => {
+                write!(f, "  Data file path: {}\n", p)?;
+            }
+            None => {
+                write!(f, "  Data file path: DEFAULT")?;                
+            }
+        }
         write!(f, "  Debug mode: {}\n", self.debug_mode)
     }    
 }
