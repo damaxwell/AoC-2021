@@ -8,8 +8,8 @@ pub fn solve(args: &AppArgs) -> Result<Solution> {
 	let r = args.open_problem_file()?;
 
 	let mut pos = 0;
-	let mut depth_or_aim: i64 = 0;
-	let mut true_depth: i64 = 0;
+	let mut depth_or_aim = 0;
+	let mut true_depth = 0;
 
 	for line in r.lines() {
 
