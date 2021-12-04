@@ -1,16 +1,19 @@
 mod day01;
 mod day02;
+mod day03;
+mod day04;
+
 use std::fmt;
 use std::fs::{File};
 use std::io::{BufReader};
 use anyhow::{anyhow,Result,Context};
 
 
-
 type Solver = fn(&AppArgs) -> Result<Solution>;
 static SOLVERS: &[Solver] = &[ day01::solve, 
-                               day02::solve ];
-
+                               day02::solve,
+                               day03::solve, 
+                               day04::solve ];
 
 pub struct Solution {
     part_a: i64,
